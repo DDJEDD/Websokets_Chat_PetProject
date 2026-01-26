@@ -1,0 +1,28 @@
+services:
+  auth_service:
+    build: AuthenticationService
+    ports:
+      - "8001:8001"
+    depends_on:
+      - auth_db
+  chat_service:
+    build: ChatService
+    ports:
+      - "8002:8002"
+    depends_on:
+      - chat_db
+  auth_db:
+    image: postgres:16
+    env_file:
+      - AuthenticationService/.env.example
+    volumes:
+      - auth_pgdata:/var/lib/postgresql/data
+  chat_db:
+    image: postgres:16
+    env_file:
+      - ChatService/.env.example
+    volumes:
+      - chat_pgdata:/var/lib/postgresql/data
+volumes:
+  auth_pgdata:
+  chat_pgdata:

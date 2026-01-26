@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+SQLAlchemy
+git+https://github.com/DDJEDD/Shared_lib_for_WebSockets_Chat_Petproject.git@main#egg=petproject_shared
+asyncpg
+pydantic
+PyJWT
+alembic
+python-dotenv
+psycopg2-binary
+httpx

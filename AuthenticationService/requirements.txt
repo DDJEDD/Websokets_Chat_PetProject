@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+SQLAlchemy
+asyncpg
+pydantic
+passlib==1.7.4
+bcrypt==4.0.1
+PyJWT
+alembic
+python-dotenv
+psycopg2-binary
+git+https://github.com/DDJEDD/Shared_lib_for_WebSockets_Chat_Petproject.git@main#egg=petproject_shared
