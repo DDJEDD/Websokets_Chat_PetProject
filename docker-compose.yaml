@@ -14,15 +14,28 @@ services:
   auth_db:
     image: postgres:16
     env_file:
-      - AuthenticationService/.env.example
+      - AuthenticationService/.env
     volumes:
       - auth_pgdata:/var/lib/postgresql/data
   chat_db:
     image: postgres:16
     env_file:
-      - ChatService/.env.example
+      - ChatService/.env
     volumes:
       - chat_pgdata:/var/lib/postgresql/data
+
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+
+
+    container_name: nginx_proxy
+    ports:
+      - "8000:8000"
+    depends_on:
+      - auth_service
+      - chat_service
 volumes:
   auth_pgdata:
   chat_pgdata:

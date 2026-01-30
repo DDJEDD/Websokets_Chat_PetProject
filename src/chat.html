@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messenger</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/chat.css">
+</head>
+<body>
+    <!-- Menu Overlay -->
+    <div class="menu-overlay" id="menuOverlay"></div>
+
+    <!-- Dropdown Menu -->
+    <div class="dropdown-menu" id="dropdownMenu">
+        <div class="menu-header">Menu</div>
+        <div class="menu-item" id="logoutBtn">
+            <div class="menu-item-icon">🚪</div>
+            <div class="menu-item-text">Exit</div>
+        </div>
+    </div>
+
+    <div class="messenger-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="header-top">
+                    <div class="menu-btn" id="menuBtn">☰</div>
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" class="search-input" placeholder="Search...">
+                    </div>
+                </div>
+            </div>
+
+            <div class="chats-list">
+                <div class="chat-item active">
+                    <div class="avatar">T</div>
+                    <div class="chat-info">
+                        <div class="chat-header">
+                            <span class="chat-name">Test</span>
+                            <span class="chat-time">14:32</span>
+                        </div>
+                        <div class="chat-preview">test</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="chat-area">
+            <div class="chat-header-bar">
+                <div class="chat-header-avatar">T</div>
+                <div class="chat-header-info">
+                    <div class="chat-header-name">Test</div>
+                    <div class="chat-header-status">test</div>
+                </div>
+                <div class="chat-actions">
+                    <div class="action-btn">🔍</div>
+                    <div class="action-btn">📞</div>
+                    <div class="action-btn">⋮</div>
+                </div>
+            </div>
+
+            <div class="messages-container">
+                <div class="date-divider">test</div>
+
+                <div class="message incoming">
+                    <div class="message-avatar">test</div>
+                    <div class="message-content">
+                        <div class="message-text">test</div>
+                        <div class="message-time">14:28</div>
+                    </div>
+                </div>
+
+                <div class="message outgoing">
+                    <div class="message-avatar">test</div>
+                    <div class="message-content">
+                        <div class="message-text">test</div>
+                        <div class="message-time">14:30</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-area">
+                <div class="input-container">
+                    <div class="input-wrapper">
+                        <div class="attach-btn">📎</div>
+                        <input type="text" class="message-input" placeholder="write message...">
+                        <div class="attach-btn">😊</div>
+                    </div>
+                    <button class="send-btn">➤</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/js/chat.js"></script>
+</body>
+</html>
