@@ -1,9 +1,6 @@
 import {permit} from './tools.js';
 import { verifyToken } from './verifytoken.js';
 export async function login() {
-  const status = document.getElementById('status');
-  status.textContent = 'connecting...';
-  status.className = 'status';
   try {
     const res = await fetch('/auth/login', {
       method: 'POST',
@@ -17,29 +14,23 @@ export async function login() {
       })
     });
     if (!res.ok) {
-      const text = await res.text();
-      throw new Error(text || 'login failed');
+      console.log(await res.text());
     }
-    permit(res, status);
+    permit(res);
   } catch (e) {
-    status.textContent = e.message;
-    status.classList.add('error');
+    console.log(e);
   }
 
 }
 
 export async function register() {
-      const status = document.getElementById('status');
-      status.textContent = 'creating identity...';
-      status.className = 'status';
 
       const username = document.getElementById('username').value;
       const p1 = document.getElementById('password').value;
       const p2 = document.getElementById('password2').value;
 
       if (p1 !== p2) {
-        status.textContent = 'passwords do not match';
-        status.classList.add('error');
+        console.log("password do not match");
         return;
       }
 
@@ -52,14 +43,13 @@ export async function register() {
         });
 
         if (!res.ok) {
-          const text = await res.text();
-          throw new Error(text || 'registration failed');
+          console.log(await res.text());
+          return;
         }
+        window.location.replace("/login");
 
-        status.textContent = 'ACCOUNT CREATED';
-        status.classList.add('success');
       } catch (e) {
-        status.textContent = e.message;
-        status.classList.add('error');
+        console.log(e);
       }
+
     }

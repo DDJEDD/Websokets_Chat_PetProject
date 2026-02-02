@@ -14,32 +14,32 @@
 
     <div class="field">
       <label>Username</label>
-      <input id="username" type="text" placeholder="neo_user" />
+      <input id="username" type="text" placeholder="neo_user" required/>
     </div>
 
     <div class="field">
       <label>Password</label>
-      <input id="password" type="password" placeholder="••••••••" />
+      <input id="password" type="password" placeholder="••••••••" required/>
     </div>
 
     <div class="field">
       <label>Repeat password</label>
-      <input id="password2" type="password" placeholder="••••••••" />
+      <input id="password2" type="password" placeholder="••••••••"  required/>
     </div>
 
     <button onclick="register()">CREATE ACCOUNT</button>
 
-    <div id="status" class="status"></div>
 
     <div class="hint">
-      already have access? <a href="/login">login</a>
+      already have access? <a href="/">login</a>
     </div>
   </div>
 
   <script type="module">
     import { register} from './js/auth.js';
 
-  window.register = register;
+    window.register = register;
+
   </script>
 
 </body>

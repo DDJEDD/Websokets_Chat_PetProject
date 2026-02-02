@@ -1,6 +1,4 @@
-export function permit(res, status) {
-  status.textContent = 'ACCESS GRANTED';
-  status.classList.add('success');
+export function permit(res) {
   console.log("successful");
   window.location.replace("/chat");
 }

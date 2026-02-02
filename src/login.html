@@ -16,21 +16,18 @@
 
     <div class="field">
       <label>Username</label>
-      <input id="username" type="text" placeholder="neo_user" />
+      <input id="username" type="text" placeholder="neo_user" required/>
     </div>
 
     <div class="field">
       <label>Password</label>
-      <input id="password" type="password" placeholder="••••••••" />
+      <input id="password" type="password" placeholder="••••••••" required/>
     </div>
 
     <button onclick="login()">LOGIN</button>
     <div class="hint">
       dont have access? <a href="/register"> register</a>
     </div>
-    <div id="status" class="status"></div>
-  </div>
-
   <script type="module">
   import { login} from './js/auth.js';
   import { verifyToken } from './js/verifytoken.js';
