@@ -10,6 +10,10 @@ export async function verifyToken() {
             console.log("Token not found or expired. Login continues.");
             return false;
         }
+        if (res.status == 404) {
+            console.log("No token found. Login continues.");
+            return false;
+        }
 
 
         const data = await res.json();

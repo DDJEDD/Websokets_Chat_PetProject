@@ -18,6 +18,63 @@
             <div class="menu-item-icon">🚪</div>
             <div class="menu-item-text">Exit</div>
         </div>
+        <div class="menu-item" id="sessionsBtn">
+            <div class="menu-item-icon">📱</div>
+            <div class="menu-item-text">Sessions</div>
+        </div>
+        <div class="menu-item" id="settingsBtn">
+            <div class="menu-item-icon">⚙️</div>
+            <div class="menu-item-text">Settings</div>
+        </div>
+        <div class="menu-item" id="aboutBtn">
+            <div class="menu-item-icon">ℹ️</div>
+            <div class="menu-item-text">About</div>
+        </div>
+    </div>
+
+    <!-- About Menu -->
+    <div class="side-menu" id="aboutMenu">
+        <div class="side-menu-header">
+            <button class="back-btn" id="aboutBackBtn">←</button>
+            <h2>About</h2>
+        </div>
+        <div class="side-menu-content">
+            <div class="about-section">
+                <div class="about-logo">💬</div>
+                <h3>Messenger</h3>
+                <p class="version">Version 0.0.5 UNSTABLE (PRE-ALPHA)</p>
+            </div>
+            <div class="about-info">
+                <div class="info-item">
+                    <span class="info-label">Developer</span>
+                    <span class="info-value">DJED</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Release Date</span>
+                    <span class="info-value">planned for summer 2026</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Platform</span>
+                    <span class="info-value">Web</span>
+                </div>
+            </div>
+            <div class="about-description">
+                <p>DEMO version of a modern messenger. Havent got chats yet, but you can create them.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sessions Menu -->
+    <div class="side-menu" id="sessionsMenu">
+        <div class="side-menu-header">
+            <button class="back-btn" id="sessionsBackBtn">←</button>
+            <h2>Active Sessions</h2>
+        </div>
+        <div class="side-menu-content">
+            <div class="sessions-list" id="sessionsList">
+                <!-- Сессии будут загружаться динамически -->
+            </div>
+        </div>
     </div>
 
     <div class="messenger-container">
@@ -34,16 +91,7 @@
             </div>
 
             <div class="chats-list">
-                <div class="chat-item active">
-                    <div class="avatar">T</div>
-                    <div class="chat-info">
-                        <div class="chat-header">
-                            <span class="chat-name">Test</span>
-                            <span class="chat-time">14:32</span>
-                        </div>
-                        <div class="chat-preview">test</div>
-                    </div>
-                </div>
+
             </div>
         </div>
 

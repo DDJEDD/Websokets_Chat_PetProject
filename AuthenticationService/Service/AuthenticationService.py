@@ -96,4 +96,10 @@ class AuthenticationService:
         user = await self.UserRepository.get_user_by_id(user_id)
         if not user:
             raise UserNotFound()
-        return user
+        return {"login": user.login, "id": user.id}
+    async def delete_session(self, session_id: str):
+        async with self.session.begin():
+            session_obj = await self.SessionRepository.get_session_by_session_id(session_id)
+            if not session_obj:
+                raise SessionNotFound()
+            await self.SessionRepository.delete_session(session_obj)

@@ -10,6 +10,7 @@ from Directory.ChatDirectory import ChatDirectory
 from Directory.RecipientsDirectory import RecipientsDirectory
 from config import SECRET_KEY, ALGORITHM
 from httpx import AsyncClient
+from .requests import AsyncRequest
 async def get_chat_service(session: AsyncSession=Depends(db.session)):
-    return ChatService(session, JWTDecode(SECRET_KEY, ALGORITHM), AsyncClient(),
+    return ChatService(session, JWTDecode(SECRET_KEY, ALGORITHM), AsyncRequest(AsyncClient()),
                        RecipientsDirectory(session), ChatDirectory(session))

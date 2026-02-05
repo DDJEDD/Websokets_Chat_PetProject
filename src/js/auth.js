@@ -15,6 +15,7 @@ export async function login() {
     });
     if (!res.ok) {
       console.log(await res.text());
+      return;
     }
     permit(res);
   } catch (e) {

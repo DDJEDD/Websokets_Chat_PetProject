@@ -11,3 +11,7 @@ class SameUsers(ChatError):
     pass
 class AccessTokenError(ChatError):
     pass
+class ChatNotFound(ChatError):
+    pass
+class ChatAlreadyExists(ChatError):
+    pass

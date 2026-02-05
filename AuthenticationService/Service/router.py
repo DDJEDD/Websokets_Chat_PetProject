@@ -11,7 +11,6 @@ router = APIRouter()
 @router.post("/register")
 async def register(register: Register,
                    auth: AuthenticationService = Depends(get_auth_service)):
-
     return await auth.register(register)
 
 @router.post("/login")
@@ -68,3 +67,7 @@ async def logout(response: Response, refresh_token: str | None = Cookie(None),
 async def get_user(user_id: int, auth: AuthenticationService = Depends(get_auth_service)):
     res = await auth.get_user_by_id(user_id)
     return {"user": res}
+@router.delete("/internal/session/{session_id}")
+async def delete_session(session_id: str, auth: AuthenticationService = Depends(get_auth_service)):
+    await auth.delete_session(session_id)
+    return {"status": "successful"}
