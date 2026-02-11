@@ -43,7 +43,6 @@ async function fetchCurrentUserId() {
         const res = await fetch('/auth/me', { credentials: 'include' });
         if (!res.ok) return null;
         const data = await res.json();
-        // /auth/me → get_me(user_id) — подбираем поле под реальный ответ
         return data.user?.id ?? null;
     } catch (e) {
         console.error('Failed to fetch current user id:', e);
@@ -351,41 +350,33 @@ async function loadChats() {
 
 // ─── Open chat ────────────────────────────────────────────────────────────────
 async function openChat(chatId, chatName, recipientId) {
-    // Update active state in sidebar
     document.querySelectorAll('.chat-item').forEach(i => i.classList.remove('active'));
     const activeItem = document.querySelector(`.chat-item[data-chat-id="${chatId}"]`);
     if (activeItem) activeItem.classList.add('active');
 
-    // Close old WebSocket if switching chats
     if (ws) {
         ws.close();
         ws = null;
     }
 
-    // Update state
     currentChatId = chatId;
     currentChatName = chatName;
 
-    // Update header
     document.getElementById('chatHeaderAvatar').textContent = chatName[0].toUpperCase();
     document.getElementById('chatHeaderName').textContent = chatName;
     document.getElementById('chatHeaderStatus').textContent = 'online';
 
-    // Show chat area, hide placeholder
     document.getElementById('noChatPlaceholder').style.display = 'none';
     const chatInner = document.getElementById('chatInner');
     chatInner.style.display = 'flex';
 
-    // Reset messages
     const container = document.getElementById('messagesContainer');
     container.innerHTML = '';
     msgOffset = 0;
     allMsgsLoaded = false;
 
-    // Load message history
     await loadMessages(chatId, false);
 
-    // Connect WebSocket
     connectWebSocket(chatId, currentUserId);
 }
 
@@ -398,6 +389,11 @@ async function loadMessages(chatId, prepend = false) {
     const loading = document.getElementById('messagesLoading');
     if (loading) loading.style.display = 'block';
 
+    // Проверяем, был ли пользователь внизу перед загрузкой
+    const wasAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+
+    const prevHeight = container.scrollHeight;
+
     try {
         const res = await fetch(
             `/chat/chats/messages/${chatId}?value_from=${msgOffset}&value_to=${msgOffset + MSG_PAGE_SIZE}`,
@@ -409,7 +405,7 @@ async function loadMessages(chatId, prepend = false) {
             return;
         }
 
-        const messages = await res.json();
+        let messages = await res.json();
 
         if (!messages || messages.length === 0) {
             allMsgsLoaded = true;
@@ -419,26 +415,25 @@ async function loadMessages(chatId, prepend = false) {
             return;
         }
 
+        // Принудительная сортировка от старых к новым
+        messages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
         msgOffset += messages.length;
 
-        const prevScrollHeight = container.scrollHeight;
-
-        // Messages come oldest-first from API — render them in order
         messages.forEach(msg => {
             const el = createMessageElement(msg);
             if (prepend) {
-                // Insert before first message (loading older history)
-                container.insertBefore(el, container.firstChild);
+                container.insertBefore(el, container.firstChild); // старые вверх
             } else {
-                container.appendChild(el);
+                container.appendChild(el); // новые вниз
             }
         });
 
         if (prepend) {
-            // Keep scroll position after prepending
-            container.scrollTop = container.scrollHeight - prevScrollHeight;
-        } else {
-            // Scroll to bottom on initial load
+            // Правильная компенсация: добавляем высоту вставленных элементов
+            const addedHeight = container.scrollHeight - prevHeight;
+            container.scrollTop += addedHeight;
+        } else if (wasAtBottom) {
             scrollToBottom();
         }
 
@@ -452,7 +447,6 @@ async function loadMessages(chatId, prepend = false) {
 
 // ─── Create message element ───────────────────────────────────────────────────
 function createMessageElement(msg) {
-    // msg fields from your backend: chat_id, user_id, text, created_at (adjust if different)
     const isOwn = msg.user_id === currentUserId;
     const div = document.createElement('div');
     div.className = `message ${isOwn ? 'outgoing' : 'incoming'}`;
@@ -488,16 +482,20 @@ function connectWebSocket(chatId, userId) {
     });
 
     ws.addEventListener('message', (event) => {
-        try {
-            const msg = JSON.parse(event.data);
-            // Своё эхо — игнорируем, уже отрендерили оптимистично
-            if (msg.user_id === currentUserId) return;
-            appendIncomingMessage(msg.text);
-        } catch {
-            // Если бэк шлёт голый текст (старый формат) — рендерим как есть
-            appendIncomingMessage(event.data);
+    try {
+        const data = JSON.parse(event.data);
+
+        if (typeof data === 'object' && data !== null) {
+            if (data.user_id === currentUserId) return;
+            appendIncomingMessage(String(data.text ?? ''));
+        } else {
+            appendIncomingMessage(String(data));
         }
-    });
+
+    } catch {
+        appendIncomingMessage(String(event.data));
+    }
+});
 
     ws.addEventListener('close', () => {
         console.log('WS disconnected');
@@ -512,20 +510,17 @@ function connectWebSocket(chatId, userId) {
 // ─── Send message ─────────────────────────────────────────────────────────────
 function sendMessage() {
     const input = document.getElementById('messageInput');
-    const text = input.value.trim();
+    const text = String(input.value).trim();
     if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
 
-    // Optimistically render own message immediately
     appendOwnMessage(text);
 
     ws.send(text);
     input.value = '';
 
-    // Update last message preview in sidebar
     const preview = document.getElementById(`preview-${currentChatId}`);
     if (preview) preview.textContent = text;
 
-    // Update time in sidebar
     const chatItem = document.querySelector(`.chat-item[data-chat-id="${currentChatId}"]`);
     if (chatItem) {
         const timeEl = chatItem.querySelector('.chat-time');
@@ -538,10 +533,10 @@ function sendMessage() {
 // ─── Append messages to container ────────────────────────────────────────────
 function appendOwnMessage(text) {
     const container = document.getElementById('messagesContainer');
-
-    // Remove "no messages" placeholder if present
     const noMsg = container.querySelector('.no-messages');
     if (noMsg) noMsg.remove();
+
+    const wasAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
 
     const time = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
     const div = document.createElement('div');
@@ -553,20 +548,18 @@ function appendOwnMessage(text) {
         </div>`;
 
     container.appendChild(div);
-    scrollToBottom();
+
+    if (wasAtBottom) {
+        scrollToBottom();
+    }
 }
 
 function appendIncomingMessage(text) {
-    // Don't duplicate if it's our own echo —
-    // your backend's send_message broadcasts to ALL including sender.
-    // If your backend echoes sender's messages back, you can skip rendering
-    // here for own messages by comparing user_id in the payload.
-    // For now we append all incoming as "incoming" style.
-    // If you send structured JSON from backend, parse it here.
-
     const container = document.getElementById('messagesContainer');
     const noMsg = container.querySelector('.no-messages');
     if (noMsg) noMsg.remove();
+
+    const wasAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
 
     const time = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
     const div = document.createElement('div');
@@ -578,9 +571,11 @@ function appendIncomingMessage(text) {
         </div>`;
 
     container.appendChild(div);
-    scrollToBottom();
 
-    // Update preview in sidebar
+    if (wasAtBottom) {
+        scrollToBottom();
+    }
+
     const preview = document.getElementById(`preview-${currentChatId}`);
     if (preview) preview.textContent = text;
 }
@@ -591,8 +586,9 @@ function scrollToBottom() {
     container.scrollTop = container.scrollHeight;
 }
 
-function escapeHtml(str) {
-    return String(str)
+function escapeHtml(value) {
+    const str = (value === null || value === undefined) ? '' : String(value);
+    return str
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
