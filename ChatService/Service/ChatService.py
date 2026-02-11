@@ -27,18 +27,20 @@ class ChatService:
         user_id = self.JWTDecode.get_user_id(payload)
         return user_id
 
-    async def create_chat(self, user_id:int, recipient_id:int, is_group:bool = False):
-        if user_id == recipient_id:
-            raise SameUsers()
-        user = await self.client.get_user(user_id)
-        recipient = await self.client.get_user(recipient_id)
-        async with self.session.begin():
-            if await self.ChatDir.find_private_chat(user_id, recipient_id):
-                raise ChatAlreadyExists()
-            chat_id = str(uuid.uuid4())
+    async def create_chat_by_username(self, current_user_id: int, recipient_username: str, is_group: bool = False):
+        recipient = await self.client.get_user_by_username(recipient_username)
+        recipient_id = recipient['user']['id']
 
+        if current_user_id == recipient_id:
+            raise SameUsers()
+
+        async with self.session.begin():
+            if await self.ChatDir.find_private_chat(current_user_id, recipient_id):
+                raise ChatAlreadyExists()
+
+            chat_id = str(uuid.uuid4())
             await self.ChatDir.create_chat(chat_id, is_group)
-            await self.RecipDir.create_recipient(chat_id, user_id,  user['user']['login'])
+            await self.RecipDir.create_recipient(chat_id, current_user_id, recipient['user']['login'])
             await self.RecipDir.create_recipient(chat_id, recipient_id, recipient['user']['login'])
 
         return {"status": "successful"}
@@ -67,11 +69,12 @@ class ChatService:
     async def add_message(self, chat_id:str, user_id:int, text:str):
         async with self.session.begin():
             await self.MessageDir.create_message(chat_id, user_id, text)
+            await self.ChatDir.change_last_message(chat_id, text)
         return {"status": "successful"}
     async def get_messages(self, chat_id:str, value_from:int, value_to:int):
-        async with self.session.begin():
-            return await self.MessageDir.get_messages(chat_id, value_from, value_to)
-
+        return await self.MessageDir.get_messages(chat_id, value_from, value_to)
+    async def get_last_message(self, chat_id:str):
+        return await self.ChatDir.get_last_message(chat_id)
 
 
 

@@ -71,3 +71,11 @@ async def get_user(user_id: int, auth: AuthenticationService = Depends(get_auth_
 async def delete_session(session_id: str, auth: AuthenticationService = Depends(get_auth_service)):
     await auth.delete_session(session_id)
     return {"status": "successful"}
+@router.post("/internal/change_password")
+async def change_password(current_password: str, new_password: str, user_id: int = Depends(get_current_user), auth: AuthenticationService = Depends(get_auth_service)):
+    await auth.change_password(current_password, new_password, user_id)
+    return {"status": "successful"}
+@router.get("/internal/user/by-username/{username}")
+async def get_user_by_username(username: str, auth: AuthenticationService = Depends(get_auth_service)):
+    res = await auth.get_user_by_username(username)
+    return {"user": res}

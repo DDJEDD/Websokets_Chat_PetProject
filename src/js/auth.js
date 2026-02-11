@@ -47,7 +47,7 @@ export async function register() {
           console.log(await res.text());
           return;
         }
-        window.location.replace("/login");
+        window.location.replace("/");
 
       } catch (e) {
         console.log(e);

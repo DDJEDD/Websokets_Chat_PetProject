@@ -2,7 +2,13 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Proper viewport: prevents unwanted zoom, respects safe areas on notched phones -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <!-- Standalone PWA / fullscreen on iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0e0e10">
     <title>Messenger</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/chat.css">
@@ -14,9 +20,9 @@
     <!-- Dropdown Menu -->
     <div class="dropdown-menu" id="dropdownMenu">
         <div class="menu-header">Menu</div>
-        <div class="menu-item" id="logoutBtn">
-            <div class="menu-item-icon">🚪</div>
-            <div class="menu-item-text">Exit</div>
+        <div class="menu-item" id="addUserBtn">
+            <div class="menu-item-icon">➕</div>
+            <div class="menu-item-text">Add User</div>
         </div>
         <div class="menu-item" id="sessionsBtn">
             <div class="menu-item-icon">📱</div>
@@ -29,6 +35,10 @@
         <div class="menu-item" id="aboutBtn">
             <div class="menu-item-icon">ℹ️</div>
             <div class="menu-item-text">About</div>
+        </div>
+        <div class="menu-item" id="logoutBtn">
+            <div class="menu-item-icon">🚪</div>
+            <div class="menu-item-text">Exit</div>
         </div>
     </div>
 
@@ -75,9 +85,40 @@
         </div>
     </div>
 
+    <!-- Add User Menu -->
+    <div class="side-menu" id="addUserMenu">
+        <div class="side-menu-header">
+            <button class="back-btn" id="addUserBackBtn">←</button>
+            <h2>Add User</h2>
+        </div>
+        <div class="side-menu-content">
+            <div class="add-user-form">
+                <div class="form-description">
+                    <p>Enter username to start a new chat</p>
+                </div>
+                <div class="form-group">
+                    <label for="addUserInput">Username</label>
+                    <input
+                        type="text"
+                        id="addUserInput"
+                        class="form-input"
+                        placeholder="Enter username..."
+                        autocomplete="off"
+                    >
+                </div>
+                <button class="form-submit-btn" id="addUserSubmitBtn">
+                    <span class="btn-icon">✓</span>
+                    <span class="btn-text">Create Chat</span>
+                </button>
+                <div class="form-error" id="addUserError" style="display: none;"></div>
+                <div class="form-success" id="addUserSuccess" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
     <div class="messenger-container">
         <!-- Sidebar -->
-        <div class="sidebar">
+        <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <div class="header-top">
                     <div class="menu-btn" id="menuBtn">☰</div>
@@ -92,15 +133,17 @@
 
         <!-- Chat Area -->
         <div class="chat-area" id="chatArea">
-            <!-- Placeholder when no chat is selected -->
+            <!-- Placeholder when no chat selected -->
             <div class="no-chat-placeholder" id="noChatPlaceholder">
                 <div class="placeholder-icon">💬</div>
                 <div class="placeholder-text">Select a chat to start messaging</div>
             </div>
 
             <!-- Active chat (hidden until chat selected) -->
-            <div class="chat-inner" id="chatInner" style="display: none; height: 100%; display: none; flex-direction: column;">
+            <div class="chat-inner" id="chatInner" style="display: none; flex-direction: column; height: 100%;">
                 <div class="chat-header-bar">
+                    <!-- Back button: visible on mobile only (via CSS) -->
+                    <div class="back-to-sidebar-btn" id="backToSidebarBtn">←</div>
                     <div class="chat-header-avatar" id="chatHeaderAvatar">?</div>
                     <div class="chat-header-info">
                         <div class="chat-header-name" id="chatHeaderName">—</div>
@@ -123,7 +166,16 @@
                     <div class="input-container">
                         <div class="input-wrapper">
                             <div class="attach-btn">📎</div>
-                            <input type="text" class="message-input" id="messageInput" placeholder="Write a message...">
+                            <input
+                                type="text"
+                                class="message-input"
+                                id="messageInput"
+                                placeholder="Write a message..."
+                                autocomplete="off"
+                                autocorrect="on"
+                                autocapitalize="sentences"
+                                enterkeyhint="send"
+                            >
                             <div class="attach-btn">😊</div>
                         </div>
                         <button class="send-btn" id="sendBtn">➤</button>

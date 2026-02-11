@@ -103,3 +103,20 @@ class AuthenticationService:
             if not session_obj:
                 raise SessionNotFound()
             await self.SessionRepository.delete_session(session_obj)
+    async def change_password(self, current_password: str, new_password: str, user_id: int):
+        async with self.session.begin():
+            user = await self.UserRepository.get_user_by_id(user_id)
+            if not user:
+                raise UserNotFound()
+            if not self.Hash.verify_password(current_password, user.hashed_password):
+                raise LoginVerifyFailed()
+            user.hashed_password = self.Hash.hash_password(new_password)
+            self.session.add(user)
+            return {"status": "successful"}
+    async def get_user_by_username(self, login: str):
+        async with self.session.begin():
+            user = await self.UserRepository.get_user_by_login(login)
+            if not user:
+                raise UserNotFound(f"User '{login}' not found")
+            return {"login": user.login, "id": user.id}
+

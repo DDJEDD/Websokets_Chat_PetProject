@@ -12,7 +12,10 @@ class UserRepository:
         stmt = select(Users).where(Users.id == user_id)
         res = await self.session.execute(stmt)
         return res.scalars().first()
-
+    async def get_user_by_login(self, login: str):
+        stmt = select(Users).where(Users.login == login)
+        res = await self.session.execute(stmt)
+        return res.scalars().first()
     async def delete_user(self, obj: Users):
         await self.session.delete(obj)
     async def create_user(self, login: str, hashed_password: str):

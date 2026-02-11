@@ -13,6 +13,21 @@ class ChatDirectory:
         chat = Chat(id=chat_id, is_group=is_group)
         self.session.add(chat)
         return chat
+    async def change_last_message(self, chat_id: str, last_message: str):
+        stmt = select(Chat).where(Chat.id == chat_id)
+        result = await self.session.execute(stmt)
+        chat = result.scalar_one_or_none()
+        if not chat:
+            raise ChatNotFound()
+
+        chat.last_message = last_message
+        chat.last_message_at = func.now()
+    async def get_last_message(self, chat_id: str):
+        stmt = select(Chat).where(Chat.id == chat_id)
+        result = await self.session.execute(stmt)
+        chat = result.scalar_one_or_none()
+        return {'last_message': chat.last_message, 'last_message_at': chat.last_message_at}
+
     async def get_chats(self, user_id:int, value_from:int, value_to:int):
         subq = (
             select(Chat.id)
