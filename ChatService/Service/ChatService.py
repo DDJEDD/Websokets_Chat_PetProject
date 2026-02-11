@@ -4,19 +4,21 @@ from petproject_shared.exceptions import TokenExpiredError
 
 from Directory.RecipientsDirectory import RecipientsDirectory
 from Directory.ChatDirectory import ChatDirectory
+from Directory.MessageDirectory import MessageDirectory
 from .requests import AsyncRequest
 from Exceptions.Exceptions import SameUsers, UserNotFound, AccessTokenError, ChatAlreadyExists
-
+from .WebSockets import WebSockets
 
 class ChatService:
     def __init__(self, session, JWTDecode:JWTDecode, client: AsyncRequest,
-                 RecipDir: RecipientsDirectory, ChatDir: ChatDirectory):
+                 RecipDir: RecipientsDirectory, ChatDir: ChatDirectory, MessageDir: MessageDirectory, WebSockets: WebSockets):
         self.session = session
         self.JWTDecode = JWTDecode
         self.client = client
         self.RecipDir = RecipDir
         self.ChatDir = ChatDir
-
+        self.MessageDir = MessageDir
+        self.WebSockets = WebSockets
     def get_current_user(self, access_token: str):
         try:
             payload = self.JWTDecode.decode_token(access_token, True)
@@ -62,3 +64,15 @@ class ChatService:
         async with self.session.begin():
             await self.ChatDir.delete_chat(chat_id)
             return {"status": "successful"}
+    async def add_message(self, chat_id:str, user_id:int, text:str):
+        async with self.session.begin():
+            await self.MessageDir.create_message(chat_id, user_id, text)
+        return {"status": "successful"}
+    async def get_messages(self, chat_id:str, value_from:int, value_to:int):
+        async with self.session.begin():
+            return await self.MessageDir.get_messages(chat_id, value_from, value_to)
+
+
+
+
+

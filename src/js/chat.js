@@ -1,9 +1,23 @@
 import { verifyToken } from './verifytoken.js';
 
+// ─── Constants ───────────────────────────────────────────────────────────────
 const PAGE_SIZE = 20;
-let offset = 0;
+const MSG_PAGE_SIZE = 30;
+
+// ─── State ────────────────────────────────────────────────────────────────────
+let chatsOffset = 0;
 let allChatsLoaded = false;
 
+let currentChatId = null;
+let currentUserId = null;
+let currentChatName = null;
+
+let ws = null;                 // active WebSocket
+let msgOffset = 0;
+let allMsgsLoaded = false;
+let isLoadingMsgs = false;
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
     const res = await verifyToken();
     if (!res) {
@@ -11,57 +25,68 @@ window.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
+    currentUserId = await fetchCurrentUserId();
+
+    if (!currentUserId) {
+        console.error('Could not get user_id — WebSocket will not work');
+    } else {
+        console.log('Current user_id:', currentUserId);
+    }
+
     initMessenger();
     loadChats();
 });
 
+// Получаем user_id через /auth/me
+async function fetchCurrentUserId() {
+    try {
+        const res = await fetch('/auth/me', { credentials: 'include' });
+        if (!res.ok) return null;
+        const data = await res.json();
+        // /auth/me → get_me(user_id) — подбираем поле под реальный ответ
+        return data.user?.id ?? null;
+    } catch (e) {
+        console.error('Failed to fetch current user id:', e);
+        return null;
+    }
+}
+
+// ─── Messenger UI init ───────────────────────────────────────────────────────
 function initMessenger() {
-    const menuBtn = document.getElementById('menuBtn');
-    const menuOverlay = document.getElementById('menuOverlay');
-    const logoutBtn = document.getElementById('logoutBtn');
-    const aboutBtn = document.getElementById('aboutBtn');
-    const sessionsBtn = document.getElementById('sessionsBtn');
-    const aboutBackBtn = document.getElementById('aboutBackBtn');
+    const menuBtn         = document.getElementById('menuBtn');
+    const menuOverlay     = document.getElementById('menuOverlay');
+    const logoutBtn       = document.getElementById('logoutBtn');
+    const aboutBtn        = document.getElementById('aboutBtn');
+    const sessionsBtn     = document.getElementById('sessionsBtn');
+    const aboutBackBtn    = document.getElementById('aboutBackBtn');
     const sessionsBackBtn = document.getElementById('sessionsBackBtn');
+    const sendBtn         = document.getElementById('sendBtn');
+    const messageInput    = document.getElementById('messageInput');
+    const messagesContainer = document.getElementById('messagesContainer');
 
     menuBtn.addEventListener('click', toggleMenu);
 
-
     menuOverlay.addEventListener('click', () => {
-        const dropdownMenu = document.getElementById('dropdownMenu');
-        const aboutMenu = document.getElementById('aboutMenu');
-        const sessionsMenu = document.getElementById('sessionsMenu');
-
-        if (dropdownMenu.classList.contains('active')) {
-            toggleMenu();
-        }
-        if (aboutMenu.classList.contains('active')) {
-            closeAboutMenu();
-        }
-        if (sessionsMenu.classList.contains('active')) {
-            closeSessionsMenu();
-        }
+        if (document.getElementById('dropdownMenu').classList.contains('active')) toggleMenu();
+        if (document.getElementById('aboutMenu').classList.contains('active'))    closeAboutMenu();
+        if (document.getElementById('sessionsMenu').classList.contains('active')) closeSessionsMenu();
     });
 
     logoutBtn.addEventListener('click', logout);
 
-    // About menu
     aboutBtn.addEventListener('click', () => {
         toggleMenu();
         setTimeout(() => openAboutMenu(), 100);
     });
-
     aboutBackBtn.addEventListener('click', closeAboutMenu);
 
-    // Sessions menu
     sessionsBtn.addEventListener('click', () => {
         toggleMenu();
         setTimeout(() => openSessionsMenu(), 100);
     });
-
     sessionsBackBtn.addEventListener('click', closeSessionsMenu);
 
-
+    // Chats infinite scroll
     const chatsList = document.querySelector(".chats-list");
     chatsList.addEventListener('scroll', () => {
         if (allChatsLoaded) return;
@@ -69,13 +94,31 @@ function initMessenger() {
             loadChats();
         }
     });
+
+    // Send on button click
+    sendBtn.addEventListener('click', sendMessage);
+
+    // Send on Enter
+    messageInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    // Messages infinite scroll (load older messages when scrolled to top)
+    messagesContainer.addEventListener('scroll', () => {
+        if (allMsgsLoaded || isLoadingMsgs) return;
+        if (messagesContainer.scrollTop < 60) {
+            loadMessages(currentChatId, true);
+        }
+    });
 }
 
+// ─── Menu helpers ─────────────────────────────────────────────────────────────
 function toggleMenu() {
-    const menu = document.getElementById('dropdownMenu');
-    const overlay = document.getElementById('menuOverlay');
-    menu.classList.toggle('active');
-    overlay.classList.toggle('active');
+    document.getElementById('dropdownMenu').classList.toggle('active');
+    document.getElementById('menuOverlay').classList.toggle('active');
 }
 
 async function logout() {
@@ -87,57 +130,38 @@ async function logout() {
         });
         if (!res.ok) {
             alert('Ошибка выхода');
-            console.error('Error logging out:', await res.text());
             return;
         }
         location.reload();
     }
 }
 
-
 function openAboutMenu() {
-    const aboutMenu = document.getElementById('aboutMenu');
-    const menuOverlay = document.getElementById('menuOverlay');
-    aboutMenu.classList.add('active');
-    menuOverlay.classList.add('active');
+    document.getElementById('aboutMenu').classList.add('active');
+    document.getElementById('menuOverlay').classList.add('active');
 }
-
 function closeAboutMenu() {
-    const aboutMenu = document.getElementById('aboutMenu');
-    const menuOverlay = document.getElementById('menuOverlay');
-    aboutMenu.classList.remove('active');
-    menuOverlay.classList.remove('active');
+    document.getElementById('aboutMenu').classList.remove('active');
+    document.getElementById('menuOverlay').classList.remove('active');
 }
-
-
 function openSessionsMenu() {
-    const sessionsMenu = document.getElementById('sessionsMenu');
-    const menuOverlay = document.getElementById('menuOverlay');
-    sessionsMenu.classList.add('active');
-    menuOverlay.classList.add('active');
+    document.getElementById('sessionsMenu').classList.add('active');
+    document.getElementById('menuOverlay').classList.add('active');
     loadSessions();
 }
-
 function closeSessionsMenu() {
-    const sessionsMenu = document.getElementById('sessionsMenu');
-    const menuOverlay = document.getElementById('menuOverlay');
-    sessionsMenu.classList.remove('active');
-    menuOverlay.classList.remove('active');
+    document.getElementById('sessionsMenu').classList.remove('active');
+    document.getElementById('menuOverlay').classList.remove('active');
 }
 
+// ─── Sessions ─────────────────────────────────────────────────────────────────
 async function loadSessions() {
     const sessionsList = document.getElementById('sessionsList');
     sessionsList.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--gray-text);">Загрузка...</div>';
 
     try {
-        const res = await fetch('/auth/me', {
-            method: 'GET',
-            credentials: 'include'
-        });
-
-        if (!res.ok) {
-            throw new Error('Failed to load sessions');
-        }
+        const res = await fetch('/auth/me', { method: 'GET', credentials: 'include' });
+        if (!res.ok) throw new Error('Failed to load sessions');
 
         const data = await res.json();
         const sessions = data.sessions;
@@ -147,37 +171,25 @@ async function loadSessions() {
                 <div class="no-sessions">
                     <div class="no-sessions-icon">📱</div>
                     <div class="no-sessions-text">Нет активных сессий</div>
-                </div>
-            `;
+                </div>`;
             return;
         }
 
         sessionsList.innerHTML = '';
-
         const currentSessionId = getCurrentSessionId();
-
         sessions.forEach(session => {
-            const sessionItem = createSessionItem(session, currentSessionId);
-            sessionsList.appendChild(sessionItem);
+            sessionsList.appendChild(createSessionItem(session, currentSessionId));
         });
-
     } catch (error) {
         console.error('Error loading sessions:', error);
-        sessionsList.innerHTML = `
-            <div style="text-align: center; padding: 20px; color: #ef4444;">
-                Error loading sessions
-            </div>
-        `;
+        sessionsList.innerHTML = `<div style="text-align: center; padding: 20px; color: #ef4444;">Error loading sessions</div>`;
     }
 }
 
 function getCurrentSessionId() {
-    const cookies = document.cookie.split(';');
-    for (let cookie of cookies) {
+    for (let cookie of document.cookie.split(';')) {
         const [name, value] = cookie.trim().split('=');
-        if (name === 'session_id') {
-            return value;
-        }
+        if (name === 'session_id') return value;
     }
     return null;
 }
@@ -214,112 +226,92 @@ function createSessionItem(session, currentSessionId) {
                 <button class="session-terminate-btn" data-session-id="${session.session_id}">
                     Terminate session
                 </button>
-            </div>
-        ` : ''}
-    `;
+            </div>` : ''}`;
 
     if (!isCurrent) {
-        const terminateBtn = div.querySelector('.session-terminate-btn');
-        terminateBtn.addEventListener('click', () => {
+        div.querySelector('.session-terminate-btn').addEventListener('click', () => {
             terminateSession(session.session_id);
         });
     }
-
     return div;
 }
 
 function getDeviceIcon(userAgent) {
-    const ua = userAgent.toLowerCase();
-    if (ua.includes('mobile') || ua.includes('android') || ua.includes('iphone')) {
-        return '📱';
-    } else if (ua.includes('tablet') || ua.includes('ipad')) {
-        return '📱';
-    } else {
-        return '💻';
-    }
+    const ua = (userAgent || '').toLowerCase();
+    return (ua.includes('mobile') || ua.includes('android') || ua.includes('iphone') || ua.includes('tablet') || ua.includes('ipad'))
+        ? '📱' : '💻';
 }
 
-function parseUserAgent(userAgent) {
-    let browser = 'unknown browser';
-    let os = 'unknown OS';
+function parseUserAgent(userAgent = '') {
+    let browser = 'Unknown browser';
+    let os = 'Unknown OS';
 
-    if (userAgent.includes('Edg')) browser = 'Edge';
-    else if (userAgent.includes('Firefox')) browser = 'Firefox';
-    else if (userAgent.includes('Chrome')) browser = 'Chrome';
+    if (userAgent.includes('Edg'))                                          browser = 'Edge';
+    else if (userAgent.includes('Firefox'))                                 browser = 'Firefox';
+    else if (userAgent.includes('Chrome'))                                  browser = 'Chrome';
     else if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) browser = 'Safari';
-    else if (userAgent.includes('Opera') || userAgent.includes('OPR')) browser = 'Opera';
+    else if (userAgent.includes('Opera') || userAgent.includes('OPR'))      browser = 'Opera';
 
-    if (userAgent.includes('Windows NT 10.0')) os = 'Windows 10/11';
-    else if (userAgent.includes('Windows NT 6.3')) os = 'Windows 8.1';
-    else if (userAgent.includes('Windows NT 6.2')) os = 'Windows 8';
-    else if (userAgent.includes('Windows NT 6.1')) os = 'Windows 7';
-    else if (userAgent.includes('Windows')) os = 'Windows';
+    if (userAgent.includes('Windows NT 10.0'))      os = 'Windows 10/11';
+    else if (userAgent.includes('Windows NT 6.3'))  os = 'Windows 8.1';
+    else if (userAgent.includes('Windows NT 6.2'))  os = 'Windows 8';
+    else if (userAgent.includes('Windows NT 6.1'))  os = 'Windows 7';
+    else if (userAgent.includes('Windows'))         os = 'Windows';
     else if (userAgent.includes('Mac OS X')) {
-        const match = userAgent.match(/Mac OS X ([\d_]+)/);
-        os = match ? `macOS ${match[1].replace(/_/g, '.')}` : 'macOS';
+        const m = userAgent.match(/Mac OS X ([\d_]+)/);
+        os = m ? `macOS ${m[1].replace(/_/g, '.')}` : 'macOS';
     }
-    else if (userAgent.includes('Linux')) os = 'Linux';
+    else if (userAgent.includes('Linux'))   os = 'Linux';
     else if (userAgent.includes('Android')) {
-        const match = userAgent.match(/Android ([\d.]+)/);
-        os = match ? `Android ${match[1]}` : 'Android';
+        const m = userAgent.match(/Android ([\d.]+)/);
+        os = m ? `Android ${m[1]}` : 'Android';
     }
     else if (userAgent.includes('iOS') || userAgent.includes('iPhone')) {
-        const match = userAgent.match(/OS ([\d_]+)/);
-        os = match ? `iOS ${match[1].replace(/_/g, '.')}` : 'iOS';
+        const m = userAgent.match(/OS ([\d_]+)/);
+        os = m ? `iOS ${m[1].replace(/_/g, '.')}` : 'iOS';
     }
 
     return { browser, os };
 }
 
 function formatExpiryDate(date) {
-    const now = new Date();
-    const diff = date - now;
-
-    const days = Math.floor(diff / 86400000);
+    const diff = date - new Date();
+    const days  = Math.floor(diff / 86400000);
     const hours = Math.floor((diff % 86400000) / 3600000);
-
-    if (diff < 0) return 'Expired';
-    if (days > 30) return `in ${Math.floor(days / 30)} мес`;
-    if (days > 0) return `  in ${days} д`;
-    if (hours > 0) return ` in ${hours} ч`;
-    return 'менее часа';
+    if (diff < 0)    return 'Expired';
+    if (days > 30)   return `in ${Math.floor(days / 30)} months`;
+    if (days > 0)    return `in ${days} days`;
+    if (hours > 0)   return `in ${hours} hours`;
+    return 'less than an hour';
 }
 
 async function terminateSession(sessionId) {
-    if (!confirm('are you sure you want to terminate this session?')) {
-        return;
-    }
-
+    if (!confirm('Are you sure you want to terminate this session?')) return;
     try {
         const res = await fetch(`/auth/internal/session/${sessionId}`, {
             method: 'DELETE',
             credentials: 'include'
         });
-
-        if (!res.ok) {
-            throw new Error('Failed to terminate session');
-        }
-
+        if (!res.ok) throw new Error('Failed to terminate session');
         loadSessions();
-
     } catch (error) {
         console.error('Error terminating session:', error);
         alert('Error terminating session');
     }
 }
 
-
+// ─── Chats list ───────────────────────────────────────────────────────────────
 async function loadChats() {
     if (allChatsLoaded) return;
 
     try {
-        const res = await fetch(`/chat/chats?value_from=${offset}&value_to=${offset + PAGE_SIZE}`, {
-            method: "GET",
-            credentials: "include"
+        const res = await fetch(`/chat/chats?value_from=${chatsOffset}&value_to=${chatsOffset + PAGE_SIZE}`, {
+            method: 'GET',
+            credentials: 'include'
         });
 
         if (!res.ok) {
-            console.error("Error loading chats", await res.text());
+            console.error('Error loading chats', await res.text());
             return;
         }
 
@@ -329,34 +321,281 @@ async function loadChats() {
             return;
         }
 
-        offset += chats.length;
-
-        const chatsList = document.querySelector(".chats-list");
+        chatsOffset += chats.length;
+        const chatsList = document.querySelector('.chats-list');
 
         chats.forEach(chat => {
             const other = chat.recipients[0];
-            const div = document.createElement("div");
-            div.className = "chat-item";
+            const div = document.createElement('div');
+            div.className = 'chat-item';
             div.dataset.chatId = chat.id;
             div.innerHTML = `
                 <div class="avatar">${other.username[0].toUpperCase()}</div>
                 <div class="chat-info">
                     <div class="chat-header">
                         <span class="chat-name">${other.username}</span>
-                        <span class="chat-time">${chat.last_message_at ? chat.last_message_at.slice(11,16) : ""}</span>
+                        <span class="chat-time">${chat.last_message_at ? chat.last_message_at.slice(11, 16) : ''}</span>
                     </div>
-                    <div class="chat-preview">—</div>
-                </div>
-            `;
+                    <div class="chat-preview" id="preview-${chat.id}">—</div>
+                </div>`;
+
             chatsList.appendChild(div);
 
-            div.addEventListener('click', () => {
-                document.querySelectorAll(".chat-item").forEach(i => i.classList.remove("active"));
-                div.classList.add("active");
-            });
+            div.addEventListener('click', () => openChat(chat.id, other.username, other.id));
         });
 
     } catch (e) {
-        console.error("Error loading chats:", e);
+        console.error('Error loading chats:', e);
     }
+}
+
+// ─── Open chat ────────────────────────────────────────────────────────────────
+async function openChat(chatId, chatName, recipientId) {
+    // Update active state in sidebar
+    document.querySelectorAll('.chat-item').forEach(i => i.classList.remove('active'));
+    const activeItem = document.querySelector(`.chat-item[data-chat-id="${chatId}"]`);
+    if (activeItem) activeItem.classList.add('active');
+
+    // Close old WebSocket if switching chats
+    if (ws) {
+        ws.close();
+        ws = null;
+    }
+
+    // Update state
+    currentChatId = chatId;
+    currentChatName = chatName;
+
+    // Update header
+    document.getElementById('chatHeaderAvatar').textContent = chatName[0].toUpperCase();
+    document.getElementById('chatHeaderName').textContent = chatName;
+    document.getElementById('chatHeaderStatus').textContent = 'online';
+
+    // Show chat area, hide placeholder
+    document.getElementById('noChatPlaceholder').style.display = 'none';
+    const chatInner = document.getElementById('chatInner');
+    chatInner.style.display = 'flex';
+
+    // Reset messages
+    const container = document.getElementById('messagesContainer');
+    container.innerHTML = '';
+    msgOffset = 0;
+    allMsgsLoaded = false;
+
+    // Load message history
+    await loadMessages(chatId, false);
+
+    // Connect WebSocket
+    connectWebSocket(chatId, currentUserId);
+}
+
+// ─── Load messages ────────────────────────────────────────────────────────────
+async function loadMessages(chatId, prepend = false) {
+    if (allMsgsLoaded || isLoadingMsgs) return;
+    isLoadingMsgs = true;
+
+    const container = document.getElementById('messagesContainer');
+    const loading = document.getElementById('messagesLoading');
+    if (loading) loading.style.display = 'block';
+
+    try {
+        const res = await fetch(
+            `/chat/chats/messages/${chatId}?value_from=${msgOffset}&value_to=${msgOffset + MSG_PAGE_SIZE}`,
+            { method: 'GET', credentials: 'include' }
+        );
+
+        if (!res.ok) {
+            console.error('Error loading messages', await res.text());
+            return;
+        }
+
+        const messages = await res.json();
+
+        if (!messages || messages.length === 0) {
+            allMsgsLoaded = true;
+            if (!prepend && container.children.length === 0) {
+                container.innerHTML = '<div class="no-messages">No messages yet. Say hi! 👋</div>';
+            }
+            return;
+        }
+
+        msgOffset += messages.length;
+
+        const prevScrollHeight = container.scrollHeight;
+
+        // Messages come oldest-first from API — render them in order
+        messages.forEach(msg => {
+            const el = createMessageElement(msg);
+            if (prepend) {
+                // Insert before first message (loading older history)
+                container.insertBefore(el, container.firstChild);
+            } else {
+                container.appendChild(el);
+            }
+        });
+
+        if (prepend) {
+            // Keep scroll position after prepending
+            container.scrollTop = container.scrollHeight - prevScrollHeight;
+        } else {
+            // Scroll to bottom on initial load
+            scrollToBottom();
+        }
+
+    } catch (e) {
+        console.error('Error loading messages:', e);
+    } finally {
+        isLoadingMsgs = false;
+        if (loading) loading.style.display = 'none';
+    }
+}
+
+// ─── Create message element ───────────────────────────────────────────────────
+function createMessageElement(msg) {
+    // msg fields from your backend: chat_id, user_id, text, created_at (adjust if different)
+    const isOwn = msg.user_id === currentUserId;
+    const div = document.createElement('div');
+    div.className = `message ${isOwn ? 'outgoing' : 'incoming'}`;
+
+    const time = msg.created_at
+        ? new Date(msg.created_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+        : '';
+
+    div.innerHTML = `
+        <div class="message-content">
+            <div class="message-text">${escapeHtml(msg.text)}</div>
+            <div class="message-time">${time}</div>
+        </div>`;
+
+    return div;
+}
+
+// ─── WebSocket ────────────────────────────────────────────────────────────────
+function connectWebSocket(chatId, userId) {
+    if (!userId) {
+        console.warn('No user ID — WebSocket not connected');
+        return;
+    }
+
+    const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
+    const url = `${protocol}://${location.host}/chat/ws/chat/${chatId}/${userId}`;
+
+    ws = new WebSocket(url);
+
+    ws.addEventListener('open', () => {
+        console.log('WS connected:', chatId);
+        document.getElementById('chatHeaderStatus').textContent = 'connected';
+    });
+
+    ws.addEventListener('message', (event) => {
+        try {
+            const msg = JSON.parse(event.data);
+            // Своё эхо — игнорируем, уже отрендерили оптимистично
+            if (msg.user_id === currentUserId) return;
+            appendIncomingMessage(msg.text);
+        } catch {
+            // Если бэк шлёт голый текст (старый формат) — рендерим как есть
+            appendIncomingMessage(event.data);
+        }
+    });
+
+    ws.addEventListener('close', () => {
+        console.log('WS disconnected');
+        document.getElementById('chatHeaderStatus').textContent = 'disconnected';
+    });
+
+    ws.addEventListener('error', (e) => {
+        console.error('WS error:', e);
+    });
+}
+
+// ─── Send message ─────────────────────────────────────────────────────────────
+function sendMessage() {
+    const input = document.getElementById('messageInput');
+    const text = input.value.trim();
+    if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
+
+    // Optimistically render own message immediately
+    appendOwnMessage(text);
+
+    ws.send(text);
+    input.value = '';
+
+    // Update last message preview in sidebar
+    const preview = document.getElementById(`preview-${currentChatId}`);
+    if (preview) preview.textContent = text;
+
+    // Update time in sidebar
+    const chatItem = document.querySelector(`.chat-item[data-chat-id="${currentChatId}"]`);
+    if (chatItem) {
+        const timeEl = chatItem.querySelector('.chat-time');
+        if (timeEl) {
+            timeEl.textContent = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+        }
+    }
+}
+
+// ─── Append messages to container ────────────────────────────────────────────
+function appendOwnMessage(text) {
+    const container = document.getElementById('messagesContainer');
+
+    // Remove "no messages" placeholder if present
+    const noMsg = container.querySelector('.no-messages');
+    if (noMsg) noMsg.remove();
+
+    const time = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    const div = document.createElement('div');
+    div.className = 'message outgoing';
+    div.innerHTML = `
+        <div class="message-content">
+            <div class="message-text">${escapeHtml(text)}</div>
+            <div class="message-time">${time}</div>
+        </div>`;
+
+    container.appendChild(div);
+    scrollToBottom();
+}
+
+function appendIncomingMessage(text) {
+    // Don't duplicate if it's our own echo —
+    // your backend's send_message broadcasts to ALL including sender.
+    // If your backend echoes sender's messages back, you can skip rendering
+    // here for own messages by comparing user_id in the payload.
+    // For now we append all incoming as "incoming" style.
+    // If you send structured JSON from backend, parse it here.
+
+    const container = document.getElementById('messagesContainer');
+    const noMsg = container.querySelector('.no-messages');
+    if (noMsg) noMsg.remove();
+
+    const time = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    const div = document.createElement('div');
+    div.className = 'message incoming';
+    div.innerHTML = `
+        <div class="message-content">
+            <div class="message-text">${escapeHtml(text)}</div>
+            <div class="message-time">${time}</div>
+        </div>`;
+
+    container.appendChild(div);
+    scrollToBottom();
+
+    // Update preview in sidebar
+    const preview = document.getElementById(`preview-${currentChatId}`);
+    if (preview) preview.textContent = text;
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function scrollToBottom() {
+    const container = document.getElementById('messagesContainer');
+    container.scrollTop = container.scrollHeight;
+}
+
+function escapeHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }

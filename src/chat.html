@@ -71,9 +71,7 @@
             <h2>Active Sessions</h2>
         </div>
         <div class="side-menu-content">
-            <div class="sessions-list" id="sessionsList">
-                <!-- Сессии будут загружаться динамически -->
-            </div>
+            <div class="sessions-list" id="sessionsList"></div>
         </div>
     </div>
 
@@ -89,55 +87,47 @@
                     </div>
                 </div>
             </div>
-
-            <div class="chats-list">
-
-            </div>
+            <div class="chats-list"></div>
         </div>
 
         <!-- Chat Area -->
-        <div class="chat-area">
-            <div class="chat-header-bar">
-                <div class="chat-header-avatar">T</div>
-                <div class="chat-header-info">
-                    <div class="chat-header-name">Test</div>
-                    <div class="chat-header-status">test</div>
-                </div>
-                <div class="chat-actions">
-                    <div class="action-btn">🔍</div>
-                    <div class="action-btn">📞</div>
-                    <div class="action-btn">⋮</div>
-                </div>
+        <div class="chat-area" id="chatArea">
+            <!-- Placeholder when no chat is selected -->
+            <div class="no-chat-placeholder" id="noChatPlaceholder">
+                <div class="placeholder-icon">💬</div>
+                <div class="placeholder-text">Select a chat to start messaging</div>
             </div>
 
-            <div class="messages-container">
-                <div class="date-divider">test</div>
-
-                <div class="message incoming">
-                    <div class="message-avatar">test</div>
-                    <div class="message-content">
-                        <div class="message-text">test</div>
-                        <div class="message-time">14:28</div>
+            <!-- Active chat (hidden until chat selected) -->
+            <div class="chat-inner" id="chatInner" style="display: none; height: 100%; display: none; flex-direction: column;">
+                <div class="chat-header-bar">
+                    <div class="chat-header-avatar" id="chatHeaderAvatar">?</div>
+                    <div class="chat-header-info">
+                        <div class="chat-header-name" id="chatHeaderName">—</div>
+                        <div class="chat-header-status" id="chatHeaderStatus">offline</div>
+                    </div>
+                    <div class="chat-actions">
+                        <div class="action-btn">🔍</div>
+                        <div class="action-btn">📞</div>
+                        <div class="action-btn">⋮</div>
                     </div>
                 </div>
 
-                <div class="message outgoing">
-                    <div class="message-avatar">test</div>
-                    <div class="message-content">
-                        <div class="message-text">test</div>
-                        <div class="message-time">14:30</div>
+                <div class="messages-container" id="messagesContainer">
+                    <div class="messages-loading" id="messagesLoading" style="display:none;">
+                        <span>Loading messages...</span>
                     </div>
                 </div>
-            </div>
 
-            <div class="input-area">
-                <div class="input-container">
-                    <div class="input-wrapper">
-                        <div class="attach-btn">📎</div>
-                        <input type="text" class="message-input" placeholder="write message...">
-                        <div class="attach-btn">😊</div>
+                <div class="input-area">
+                    <div class="input-container">
+                        <div class="input-wrapper">
+                            <div class="attach-btn">📎</div>
+                            <input type="text" class="message-input" id="messageInput" placeholder="Write a message...">
+                            <div class="attach-btn">😊</div>
+                        </div>
+                        <button class="send-btn" id="sendBtn">➤</button>
                     </div>
-                    <button class="send-btn">➤</button>
                 </div>
             </div>
         </div>

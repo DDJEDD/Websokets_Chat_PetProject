@@ -9,8 +9,9 @@
     --gray-dark: #4b5563;
     --glass-bg: rgba(139, 92, 246, 0.05);
     --glass-border: rgba(139, 92, 246, 0.15);
-    --message-out: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-    --message-in: rgba(55, 48, 68, 0.5);
+    --message-bg: #2a2a2f;      /* Основной серый для сообщений */
+    --message-bg-out: #33333a;  /* Чуть светлее для своих сообщений */
+    --message-border: #3a3a45;
 }
 
 * {
@@ -348,6 +349,10 @@ body {
     flex-direction: row-reverse;
 }
 
+.message.incoming {
+    align-self: flex-start;
+}
+
 .message-avatar {
     width: 32px;
     height: 32px;
@@ -362,17 +367,17 @@ body {
 }
 
 .message-content {
-    background: var(--message-in);
+    background: var(--message-bg);
     backdrop-filter: blur(10px);
     padding: 12px 16px;
     border-radius: 16px;
-    border: 1px solid rgba(139, 92, 246, 0.1);
+    border: 1px solid var(--message-border);
     position: relative;
 }
 
 .message.outgoing .message-content {
-    background: var(--message-out);
-    border: none;
+    background: var(--message-bg-out);
+    border: 1px solid var(--message-border);
 }
 
 .message-text {
@@ -384,12 +389,12 @@ body {
 
 .message-time {
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--gray-text);
     text-align: right;
 }
 
 .message.incoming .message-time {
-    color: var(--gray-text);
+    text-align: left;  /* Для симметрии: время слева для входящих */
 }
 
 .date-divider {
