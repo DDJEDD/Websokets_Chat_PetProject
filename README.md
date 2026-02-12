@@ -3,6 +3,7 @@
 ![Status](https://img.shields.io/badge/status-alpha-orange)
 ![Python](https://img.shields.io/badge/python-3.12+-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-latest-009688)
+![Docker](https://img.shields.io/badge/Docker-latest-white_blue)
 
 Microservice-based backend project built with **FastAPI** for real-time chat communication.
 
