@@ -34,7 +34,7 @@ class AuthenticationService:
         async with self.session.begin():
             if await self.UserRepository.get_user(register.login):
                 raise UserAlreadyExists()
-            await self.UserRepository.create_user(register.login, self.Hash.hash_password(register.password))
+            await self.UserRepository.create_user(register.login, register.username, self.Hash.hash_password(register.password),)
         return {"status": "successful"}
 
     async def login(self, login:Login, fingerprint:str):

@@ -90,6 +90,30 @@ function initMessenger() {
     const messagesContainer = document.getElementById('messagesContainer');
     const backToSidebarBtn  = document.getElementById('backToSidebarBtn');
     const addUserSubmitBtn  = document.getElementById('addUserSubmitBtn');
+    const emojiBtn          = document.getElementById('emojiBtn');
+    const emojiPickerOverlay = document.getElementById('emojiPickerOverlay');
+    const emojiPicker       = document.querySelector('emoji-picker');
+
+    // ── Emoji Picker ──────────────────────────────────────────────────────────
+    if (emojiBtn && emojiPickerOverlay && emojiPicker) {
+        emojiBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            emojiPickerOverlay.style.display = 'flex';
+        });
+
+        emojiPickerOverlay.addEventListener('click', (e) => {
+            if (e.target === emojiPickerOverlay) {
+                emojiPickerOverlay.style.display = 'none';
+            }
+        });
+
+        emojiPicker.addEventListener('emoji-click', (event) => {
+            const emoji = event.detail.unicode;
+            messageInput.value += emoji;
+            messageInput.focus();
+            emojiPickerOverlay.style.display = 'none';
+        });
+    }
 
     // ── Menu ──────────────────────────────────────────────────────────────────
     menuBtn.addEventListener('click', toggleMenu);

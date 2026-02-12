@@ -2,8 +2,8 @@
 from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from alembic import context
-
-sys.path.insert(0, '/ChatService')
+import sys
+sys.path.insert(0, '/AuthenticationService')
 
 from config import DATABASE_URL
 from database.creation import Base

@@ -27,6 +27,7 @@ export async function login() {
 export async function register() {
 
       const username = document.getElementById('username').value;
+      const login = document.getElementById('login').value;
       const p1 = document.getElementById('password').value;
       const p2 = document.getElementById('password2').value;
 
@@ -40,7 +41,7 @@ export async function register() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({login:username, password: p1 })
+          body: JSON.stringify({login:login, username:username, password: p1 })
         });
 
         if (!res.ok) {

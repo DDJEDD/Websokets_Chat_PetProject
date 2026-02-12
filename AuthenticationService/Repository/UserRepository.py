@@ -18,9 +18,10 @@ class UserRepository:
         return res.scalars().first()
     async def delete_user(self, obj: Users):
         await self.session.delete(obj)
-    async def create_user(self, login: str, hashed_password: str):
+    async def create_user(self, login: str, username:str, hashed_password: str):
         new_user = Users(
             login=login,
+            username=username,
             hashed_password=hashed_password,
         )
         self.session.add(new_user)

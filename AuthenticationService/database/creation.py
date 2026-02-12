@@ -7,6 +7,7 @@ class Users(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
     login = Column(String, nullable=False)
+    username = Column(String, nullable=False)
     hashed_password = Column(String, nullable=False)
     sessions = relationship("Sessions", back_populates="user", cascade="all, delete-orphan")
 
