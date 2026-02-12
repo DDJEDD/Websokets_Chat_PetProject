@@ -20,14 +20,15 @@ Microservice-based backend project built with **FastAPI** for real-time chat com
 - Isolated authentication service
 - Async-first architecture (non-blocking I/O)
 -  **Real-time chat (WebSockets)**
-  - Authenticated WebSocket connections
-  - Real-time message broadcasting
+ - - Authenticated WebSocket connections
+ - - Real-time message broadcasting
 - Microservice-oriented architecture
+ - Own emoji menu
 
 ### 🚧 Planned Features
 
   - Public chat rooms
-  - Own emoji menu
+ 
 
 
 ---
