@@ -1,12 +1,12 @@
 # FastAPI WebSockets Chat Pet Project
 
-![Status](https://img.shields.io/badge/status-pre--alpha-orange)
+![Status](https://img.shields.io/badge/status-alpha-orange)
 ![Python](https://img.shields.io/badge/python-3.12+-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-latest-009688)
 
 Microservice-based backend project built with **FastAPI** for real-time chat communication.
 
-> ⚠️ **PRE-ALPHA** — active development, breaking changes are expected.
+> ⚠️ **ALPHA** — active development, breaking changes are expected.
 
 ---
 
