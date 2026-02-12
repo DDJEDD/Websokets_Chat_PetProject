@@ -6,7 +6,7 @@
 
 Microservice-based backend project built with **FastAPI** for real-time chat communication.
 
-> ⚠️ **PRE-ALPHA** — active development, breaking changes are expected.
+> ⚠️ **ALPHA** — active development, breaking changes are expected.
 
 ---
 
