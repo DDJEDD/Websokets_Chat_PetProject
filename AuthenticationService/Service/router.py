@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request, Depends, Response, Cookie, HTTPException
 from Service.deps import get_auth_service, get_current_user
 from Service.AuthenticationService import AuthenticationService
-from Service.schemas import Register, Login
+from Service.schemas import Register, Login, UsernameChange
 from petproject_shared.exceptions import TokenExpiredError
 from config import REFRESH_TOKEN_EXPIRE_DAYS
 from Exceptions.Exceptions import SessionNotFound
@@ -79,3 +79,7 @@ async def change_password(current_password: str, new_password: str, user_id: int
 async def get_user_by_username(username: str, auth: AuthenticationService = Depends(get_auth_service)):
     res = await auth.get_user_by_username(username)
     return {"user": res}
+@router.post("/internal/change_username")
+async def change_username(new_username: UsernameChange, user_id: int = Depends(get_current_user), auth: AuthenticationService = Depends(get_auth_service)):
+    await auth.change_username( new_username, user_id)
+    return {"status": "successful"}

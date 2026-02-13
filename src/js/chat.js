@@ -234,14 +234,14 @@ function toggleMenu() {
 }
 
 async function logout() {
-    if (confirm('Вы уверены, что хотите выйти?')) {
+    if (confirm('Are you sure you want to log out?')) {
         const res = await fetch('/auth/logout', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
         });
         if (!res.ok) {
-            alert('Ошибка выхода');
+            alert('Error logging out');
             return;
         }
         location.reload();

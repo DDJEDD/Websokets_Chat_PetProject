@@ -1,48 +1,62 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>NEON LOGIN</title>
+  <title>Login - Purple Messenger</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="/css/login.css">
-  <!-- Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
 
-  <div class="card">
-    <h1>AUTH</h1>
+  <div class="auth-container">
+    <div class="auth-card">
+      <div class="logo">
+        💬
+      </div>
+      <h1>Welcome Back</h1>
 
-    <div class="field">
-      <label>Username</label>
-      <input id="username" type="text" placeholder="neo_user" required/>
-    </div>
+      <!-- Error Message -->
+      <div id="error-message" class="message error-message"></div>
 
-    <div class="field">
-      <label>Password</label>
-      <input id="password" type="password" placeholder="••••••••" required/>
-    </div>
+      <!-- Success Message -->
+      <div id="success-message" class="message success-message"></div>
 
-    <button onclick="login()">LOGIN</button>
-    <div class="hint">
-      dont have access? <a href="/register"> register</a>
+      <form onsubmit="event.preventDefault(); login();">
+        <div class="field">
+          <label>Username</label>
+          <input id="username" type="text" placeholder="Enter your username" autocomplete="username" required/>
+        </div>
+
+        <div class="field">
+          <label>Password</label>
+          <input id="password" type="password" placeholder="Enter your password" autocomplete="current-password" required/>
+        </div>
+
+        <button type="submit" class="btn-primary">
+          <span>Sign In</span>
+        </button>
+      </form>
+
+      <div class="hint">
+        Don't have an account? <a href="/register">Create one</a>
+      </div>
     </div>
+  </div>
+
   <script type="module">
-  import { login} from './js/auth.js';
-  import { verifyToken } from './js/verifytoken.js';
+    import { login } from './js/auth.js';
+    import { verifyToken } from './js/verifytoken.js';
 
-  window.addEventListener('DOMContentLoaded', async () => {
+    window.addEventListener('DOMContentLoaded', async () => {
       const res = await verifyToken();
       if (res) {
-          window.location.replace("/chat");
+        window.location.replace("/chat");
       }
-  });
+    });
 
-
-  window.login = login;
-</script>
-
+    window.login = login;
+  </script>
 
 </body>
 </html>

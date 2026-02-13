@@ -1,5 +1,6 @@
 from sqlalchemy import select
 from database.creation import Users
+from Exceptions.Exceptions import UserNotFound
 class UserRepository:
     def __init__(self, session):
         self.session = session
@@ -26,3 +27,10 @@ class UserRepository:
         )
         self.session.add(new_user)
         return new_user
+    async def change_username(self, user_id: int, new_username: str):
+        stmt = select(Users).where(Users.id == user_id)
+        res = await self.session.execute(stmt)
+        user = res.scalars().first()
+        user.username = new_username
+        self.session.add(user)
+        return user

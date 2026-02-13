@@ -4,7 +4,7 @@ from Exceptions.Exceptions import (
     SessionNotFound, UserNotFound, LoginVerifyFailed,
     UserAlreadyExists, AccessTokenExpired
 )
-from Service.schemas import Register, TokenModel, Login
+from Service.schemas import Register, TokenModel, Login, UsernameChange
 from Service.hashing import Hash
 from Repository.UserRepository import UserRepository
 from Repository.SessionRepository import SessionRepository
@@ -12,6 +12,7 @@ from petproject_shared.exceptions import TokenExpiredError
 from petproject_shared.jwt_encode import JWTEncode
 from petproject_shared.jwt_decode import JWTDecode
 from config import ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_DAYS
+
 class AuthenticationService:
     def __init__(self, session, Hash: Hash, JWTEncode: JWTEncode,
                  JWTDecode: JWTDecode, UserRepository: UserRepository, SessionRepository: SessionRepository):
@@ -117,6 +118,12 @@ class AuthenticationService:
         async with self.session.begin():
             user = await self.UserRepository.get_user_by_login(login)
             if not user:
-                raise UserNotFound(f"User '{login}' not found")
+                raise UserNotFound()
             return {"login": user.login, "id": user.id}
-
+    async def change_username(self, new_username: UsernameChange , user_id: int):
+        async with self.session.begin():
+            user = await self.UserRepository.get_user_by_id(user_id)
+            if not user:
+                raise UserNotFound()
+            await self.UserRepository.change_username(user_id, new_username.new_username)
+            return {"new_username": new_username}

@@ -1,49 +1,63 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>NEON REGISTER</title>
+  <title>Register - Purple Messenger</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="/css/register.css">
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
 
-  <div class="card">
-    <h1>REGISTER</h1>z
+  <div class="auth-container">
+    <div class="auth-card">
+      <div class="logo">
+        💬
+      </div>
+      <h1>Create Account</h1>
 
-    <div class="field">
-      <label>Login</label>
-      <input id="login" type="text" placeholder="neo_login" required/>
-    </div>
-    <div class="field">
-      <label>Username</label>
-      <input id="username" type="text" placeholder="neo_username" required/>
-    </div>
+      <!-- Error Message -->
+      <div id="error-message" class="message error-message"></div>
 
-    <div class="field">
-      <label>Password</label>
-      <input id="password" type="password" placeholder="••••••••" required/>
-    </div>
+      <!-- Success Message -->
+      <div id="success-message" class="message success-message"></div>
 
-    <div class="field">
-      <label>Repeat password</label>
-      <input id="password2" type="password" placeholder="••••••••"  required/>
-    </div>
+      <form onsubmit="event.preventDefault(); register();">
+        <div class="field">
+          <label>Login</label>
+          <input id="login" type="text" placeholder="Choose a login" autocomplete="username" required/>
+        </div>
 
-    <button onclick="register()">CREATE ACCOUNT</button>
+        <div class="field">
+          <label>Username</label>
+          <input id="username" type="text" placeholder="Choose a display name" required/>
+        </div>
 
+        <div class="field">
+          <label>Password</label>
+          <input id="password" type="password" placeholder="Create a password" autocomplete="new-password" required/>
+        </div>
 
-    <div class="hint">
-      already have access? <a href="/">login</a>
+        <div class="field">
+          <label>Confirm Password</label>
+          <input id="password2" type="password" placeholder="Repeat your password" autocomplete="new-password" required/>
+        </div>
+
+        <button type="submit" class="btn-primary">
+          <span>Create Account</span>
+        </button>
+      </form>
+
+      <div class="hint">
+        Already have an account? <a href="/">Sign in</a>
+      </div>
     </div>
   </div>
 
   <script type="module">
-    import { register} from './js/auth.js';
+    import { register } from './js/auth.js';
 
     window.register = register;
-
   </script>
 
 </body>
