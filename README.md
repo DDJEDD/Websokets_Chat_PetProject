@@ -3,6 +3,7 @@
 ![Status](https://img.shields.io/badge/status-alpha-orange)
 ![Python](https://img.shields.io/badge/python-3.12+-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-latest-009688)
+![Docker](https://img.shields.io/badge/Docker-latest-white_blue)
 
 Microservice-based backend project built with **FastAPI** for real-time chat communication.
 
@@ -20,14 +21,15 @@ Microservice-based backend project built with **FastAPI** for real-time chat com
 - Isolated authentication service
 - Async-first architecture (non-blocking I/O)
 -  **Real-time chat (WebSockets)**
-  - Authenticated WebSocket connections
-  - Real-time message broadcasting
+ - - Authenticated WebSocket connections
+ - - Real-time message broadcasting
 - Microservice-oriented architecture
+ - Own emoji menu
 
 ### 🚧 Planned Features
 
   - Public chat rooms
-  - Own emoji menu
+ 
 
 
 ---
