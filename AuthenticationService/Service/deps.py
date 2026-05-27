@@ -9,9 +9,11 @@ from Repository.UserRepository import UserRepository
 from Repository.SessionRepository import SessionRepository
 from config import SECRET_KEY, ALGORITHM
 from petproject_shared.redis import RedisService
+import redis.asyncio as redis
+redis_service = redis.Redis(host="redis", port=6379, db=0)
 async def get_auth_service(session: AsyncSession = Depends(db.session)):
     return AuthenticationService(session, Hash(), JWTEncode(SECRET_KEY, ALGORITHM),JWTDecode(SECRET_KEY, ALGORITHM),UserRepository(session),SessionRepository(session),
-                                 RedisService("redis", 6379, 0))
+                                 RedisService(redis_service))
 
 def get_current_user(access_token: str | None = Cookie(None)):
     if not access_token:
