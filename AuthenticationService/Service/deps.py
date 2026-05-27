@@ -8,12 +8,13 @@ from petproject_shared.jwt_decode import JWTDecode
 from Repository.UserRepository import UserRepository
 from Repository.SessionRepository import SessionRepository
 from config import SECRET_KEY, ALGORITHM
-
+from petproject_shared.redis import RedisService
 async def get_auth_service(session: AsyncSession = Depends(db.session)):
-    return AuthenticationService(session, Hash(), JWTEncode(SECRET_KEY, ALGORITHM),JWTDecode(SECRET_KEY, ALGORITHM),UserRepository(session),SessionRepository(session))
+    return AuthenticationService(session, Hash(), JWTEncode(SECRET_KEY, ALGORITHM),JWTDecode(SECRET_KEY, ALGORITHM),UserRepository(session),SessionRepository(session),
+                                 RedisService("redis", 6379, 0))
 
-def get_current_user(access_token: str | None = Cookie(None),auth: AuthenticationService = Depends(get_auth_service),):
+def get_current_user(access_token: str | None = Cookie(None)):
     if not access_token:
         raise HTTPException(status_code=401, detail="not authenticated")
 
-    return auth.get_current_user(access_token)
+    return JWTDecode(SECRET_KEY, ALGORITHM).get_current_user(access_token)

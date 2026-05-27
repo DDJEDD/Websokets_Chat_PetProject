@@ -12,24 +12,18 @@ from petproject_shared.exceptions import TokenExpiredError
 from petproject_shared.jwt_encode import JWTEncode
 from petproject_shared.jwt_decode import JWTDecode
 from config import ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_DAYS
-
+from petproject_shared.redis import RedisService
 class AuthenticationService:
     def __init__(self, session, Hash: Hash, JWTEncode: JWTEncode,
-                 JWTDecode: JWTDecode, UserRepository: UserRepository, SessionRepository: SessionRepository):
+                 JWTDecode: JWTDecode, UserRepository: UserRepository, SessionRepository: SessionRepository, RedisService: RedisService):
         self.session = session
         self.Hash = Hash
         self.JWTEncode = JWTEncode
         self.JWTDecode = JWTDecode
         self.UserRepository = UserRepository
         self.SessionRepository = SessionRepository
+        self.RedisService = RedisService
 
-    def get_current_user(self, access_token: str):
-        try:
-            payload = self.JWTDecode.decode_token(access_token, True)
-        except TokenExpiredError:
-            raise AccessTokenExpired()
-        user_id = self.JWTDecode.get_user_id(payload)
-        return user_id
 
     async def register(self, register: Register):
         async with self.session.begin():
@@ -97,7 +91,7 @@ class AuthenticationService:
         user = await self.UserRepository.get_user_by_id(user_id)
         if not user:
             raise UserNotFound()
-        return {"login": user.login, "id": user.id}
+        return {"login": user.login, "id": user.id, "username": user.username}  # ✅
     async def delete_session(self, session_id: str):
         async with self.session.begin():
             session_obj = await self.SessionRepository.get_session_by_session_id(session_id)
@@ -119,11 +113,22 @@ class AuthenticationService:
             user = await self.UserRepository.get_user_by_login(login)
             if not user:
                 raise UserNotFound()
-            return {"login": user.login, "id": user.id}
-    async def change_username(self, new_username: UsernameChange , user_id: int):
+            return {"login": user.login, "id": user.id, "username": user.username}
+
+    async def change_username(self, new_username: UsernameChange, user_id: int):
         async with self.session.begin():
             user = await self.UserRepository.get_user_by_id(user_id)
             if not user:
                 raise UserNotFound()
+
+            old_username = user.username
+
             await self.UserRepository.change_username(user_id, new_username.new_username)
-            return {"new_username": new_username}
+
+            await self.RedisService.update_username(
+                user_id=user_id,
+                old_username=old_username,
+                new_username=new_username.new_username
+            )
+
+            return {"new_username": new_username.new_username}
