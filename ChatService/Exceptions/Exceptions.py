@@ -15,3 +15,6 @@ class ChatNotFound(ChatError):
     pass
 class ChatAlreadyExists(ChatError):
     pass
+
+class UserNotFoundInChat(ChatError):
+    pass

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Cookie, HTTPException, Body
+from fastapi import APIRouter, Depends, Cookie
 
 from .ChatService import ChatService
 from .WebSockets import WebSockets
@@ -7,6 +7,8 @@ from Exceptions.Exceptions import AccessTokenError
 from fastapi import WebSocketDisconnect
 from fastapi.websockets import WebSocket
 from .schemas import CreateChatRequest
+from config import SECRET_KEY, ALGORITHM
+from petproject_shared.jwt_decode import JWTDecode
 router = APIRouter()
 ws_manager = WebSockets()
 @router.post("/chatcrt")
@@ -14,7 +16,7 @@ async def chatcrt(body: CreateChatRequest , chat_service: ChatService = Depends(
     print(body)
     if not access_token:
         raise AccessTokenError()
-    user_id = chat_service.get_current_user(access_token)
+    user_id = JWTDecode(SECRET_KEY, ALGORITHM).get_current_user(access_token)
 
     return await chat_service.create_chat_by_username(user_id, body.recipient_name)
 
@@ -22,7 +24,7 @@ async def chatcrt(body: CreateChatRequest , chat_service: ChatService = Depends(
 async def chats( value_from:int, value_to:int, chat_service: ChatService = Depends(get_chat_service), access_token: str | None = Cookie(None),):
     if not access_token:
         raise AccessTokenError()
-    user_id = chat_service.get_current_user(access_token)
+    user_id = JWTDecode(SECRET_KEY, ALGORITHM).get_current_user(access_token)
     return await chat_service.get_chats(user_id, value_from, value_to)
 @router.delete("/delete_chat")
 async def delete_chat(chat_id:str, chat_service: ChatService = Depends(get_chat_service)):
@@ -45,7 +47,7 @@ async def websocket_chat(
         await websocket.close(code=1008)
         return
     try:
-        user_id = chat_service.get_current_user(access_token)
+        user_id = JWTDecode(SECRET_KEY, ALGORITHM).get_current_user(access_token)
     except AccessTokenError:
         await websocket.close(code=1008)
         return

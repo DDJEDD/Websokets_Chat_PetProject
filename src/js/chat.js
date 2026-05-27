@@ -8,9 +8,10 @@ const MSG_PAGE_SIZE = 30;
 let chatsOffset    = 0;
 let allChatsLoaded = false;
 
-let currentChatId   = null;
-let currentUserId   = null;
-let currentChatName = null;
+let currentChatId    = null;
+let currentUserId    = null;
+let currentChatName  = null;
+let currentChatLogin = null;
 
 let ws            = null;
 let msgOffset     = 0;
@@ -19,22 +20,16 @@ let isLoadingMsgs = false;
 
 // ─── Mobile helpers ───────────────────────────────────────────────────────────
 
-/** True when the viewport is in "mobile" mode (single-panel) */
 function isMobile() {
     return window.innerWidth <= 768;
 }
 
-/**
- * Show the chat panel and slide the sidebar off-screen.
- * On desktop this is a no-op (both panels are always visible).
- */
 function showChatPanel() {
     if (!isMobile()) return;
     document.getElementById('sidebar').classList.add('chat-open');
     document.getElementById('chatArea').classList.add('chat-open');
 }
 
-/** Return to the sidebar (mobile back button). */
 function showSidebarPanel() {
     if (!isMobile()) return;
     document.getElementById('sidebar').classList.remove('chat-open');
@@ -76,23 +71,23 @@ async function fetchCurrentUserId() {
 
 // ─── Messenger UI init ────────────────────────────────────────────────────────
 function initMessenger() {
-    const menuBtn           = document.getElementById('menuBtn');
-    const menuOverlay       = document.getElementById('menuOverlay');
-    const logoutBtn         = document.getElementById('logoutBtn');
-    const aboutBtn          = document.getElementById('aboutBtn');
-    const sessionsBtn       = document.getElementById('sessionsBtn');
-    const addUserBtn        = document.getElementById('addUserBtn');
-    const aboutBackBtn      = document.getElementById('aboutBackBtn');
-    const sessionsBackBtn   = document.getElementById('sessionsBackBtn');
-    const addUserBackBtn    = document.getElementById('addUserBackBtn');
-    const sendBtn           = document.getElementById('sendBtn');
-    const messageInput      = document.getElementById('messageInput');
-    const messagesContainer = document.getElementById('messagesContainer');
-    const backToSidebarBtn  = document.getElementById('backToSidebarBtn');
-    const addUserSubmitBtn  = document.getElementById('addUserSubmitBtn');
-    const emojiBtn          = document.getElementById('emojiBtn');
+    const menuBtn            = document.getElementById('menuBtn');
+    const menuOverlay        = document.getElementById('menuOverlay');
+    const logoutBtn          = document.getElementById('logoutBtn');
+    const aboutBtn           = document.getElementById('aboutBtn');
+    const sessionsBtn        = document.getElementById('sessionsBtn');
+    const addUserBtn         = document.getElementById('addUserBtn');
+    const aboutBackBtn       = document.getElementById('aboutBackBtn');
+    const sessionsBackBtn    = document.getElementById('sessionsBackBtn');
+    const addUserBackBtn     = document.getElementById('addUserBackBtn');
+    const sendBtn            = document.getElementById('sendBtn');
+    const messageInput       = document.getElementById('messageInput');
+    const messagesContainer  = document.getElementById('messagesContainer');
+    const backToSidebarBtn   = document.getElementById('backToSidebarBtn');
+    const addUserSubmitBtn   = document.getElementById('addUserSubmitBtn');
+    const emojiBtn           = document.getElementById('emojiBtn');
     const emojiPickerOverlay = document.getElementById('emojiPickerOverlay');
-    const emojiPicker       = document.querySelector('emoji-picker');
+    const emojiPicker        = document.querySelector('emoji-picker');
 
     // ── Emoji Picker ──────────────────────────────────────────────────────────
     if (emojiBtn && emojiPickerOverlay && emojiPicker) {
@@ -147,7 +142,6 @@ function initMessenger() {
 
     addUserSubmitBtn.addEventListener('click', handleAddUser);
 
-    // Add user on Enter key
     const addUserInput = document.getElementById('addUserInput');
     if (addUserInput) {
         addUserInput.addEventListener('keydown', (e) => {
@@ -173,11 +167,9 @@ function initMessenger() {
     window.addEventListener('popstate', () => {
         if (isMobile() && document.getElementById('chatArea').classList.contains('chat-open')) {
             showSidebarPanel();
-            // Push a state again so the next back press closes the browser tab
             history.pushState(null, '', location.href);
         }
     });
-    // Initial history entry so popstate fires correctly
     history.pushState(null, '', location.href);
 
     // ── Chats infinite scroll ─────────────────────────────────────────────────
@@ -208,8 +200,6 @@ function initMessenger() {
     });
 
     // ── iOS keyboard resize fix ───────────────────────────────────────────────
-    // When the keyboard appears, `window.visualViewport` shrinks. We move the
-    // input area up so it stays visible above the keyboard.
     if (window.visualViewport) {
         window.visualViewport.addEventListener('resize', handleViewportResize);
         window.visualViewport.addEventListener('scroll', handleViewportResize);
@@ -222,8 +212,7 @@ function handleViewportResize() {
     if (!vv) return;
     const messenger = document.querySelector('.messenger-container');
     if (!messenger) return;
-    // Shrink the container to the visible viewport so the input stays above keyboard
-    messenger.style.height = `${vv.height}px`;
+    messenger.style.height    = `${vv.height}px`;
     messenger.style.marginTop = `${vv.offsetTop}px`;
 }
 
@@ -269,9 +258,8 @@ function closeSessionsMenu() {
 function openAddUserMenu() {
     document.getElementById('addUserMenu').classList.add('active');
     document.getElementById('menuOverlay').classList.add('active');
-    // Clear previous input and messages
-    document.getElementById('addUserInput').value = '';
-    document.getElementById('addUserError').style.display = 'none';
+    document.getElementById('addUserInput').value          = '';
+    document.getElementById('addUserError').style.display   = 'none';
     document.getElementById('addUserSuccess').style.display = 'none';
 }
 
@@ -428,24 +416,22 @@ async function terminateSession(sessionId) {
 
 // ─── Add User ─────────────────────────────────────────────────────────────────
 async function handleAddUser() {
-    const input       = document.getElementById('addUserInput');
-    const errorDiv    = document.getElementById('addUserError');
-    const successDiv  = document.getElementById('addUserSuccess');
-    const submitBtn   = document.getElementById('addUserSubmitBtn');
-    const username    = input.value.trim();
+    const input      = document.getElementById('addUserInput');
+    const errorDiv   = document.getElementById('addUserError');
+    const successDiv = document.getElementById('addUserSuccess');
+    const submitBtn  = document.getElementById('addUserSubmitBtn');
+    const username   = input.value.trim();
 
-    // Hide previous messages
     errorDiv.style.display   = 'none';
     successDiv.style.display = 'none';
 
     if (!username) {
-        errorDiv.textContent     = 'Please enter a username';
-        errorDiv.style.display   = 'block';
+        errorDiv.textContent   = 'Please enter a username';
+        errorDiv.style.display = 'block';
         return;
     }
 
-    // Disable button while processing
-    submitBtn.disabled = true;
+    submitBtn.disabled  = true;
     submitBtn.innerHTML = '<span class="btn-icon">⏳</span><span class="btn-text">Creating...</span>';
 
     try {
@@ -461,31 +447,23 @@ async function handleAddUser() {
             throw new Error(errorData.detail || 'Failed to create chat');
         }
 
-        const data = await res.json();
-
-        // Show success message
         successDiv.textContent   = `Chat created successfully with ${username}!`;
         successDiv.style.display = 'block';
         input.value = '';
 
-        // Reload chats list
         chatsOffset    = 0;
         allChatsLoaded = false;
         document.querySelector('.chats-list').innerHTML = '';
         await loadChats();
 
-        // Close menu after 1.5 seconds
-        setTimeout(() => {
-            closeAddUserMenu();
-        }, 1500);
+        setTimeout(() => { closeAddUserMenu(); }, 1500);
 
     } catch (error) {
         console.error('Error creating chat:', error);
         errorDiv.textContent   = error.message || 'Failed to create chat';
         errorDiv.style.display = 'block';
     } finally {
-        // Re-enable button
-        submitBtn.disabled = false;
+        submitBtn.disabled  = false;
         submitBtn.innerHTML = '<span class="btn-icon">✓</span><span class="btn-text">Create Chat</span>';
     }
 }
@@ -515,9 +493,10 @@ async function loadChats() {
 
         for (const chat of chats) {
             const other = chat.recipients[0];
+            console.log('DEBUG other:', other);
             const div   = document.createElement('div');
-            div.className       = 'chat-item';
-            div.dataset.chatId  = chat.id;
+            div.className      = 'chat-item';
+            div.dataset.chatId = chat.id;
 
             let lastMessageText = '—';
             let lastMessageTime = '';
@@ -546,7 +525,7 @@ async function loadChats() {
             `;
 
             chatsList.appendChild(div);
-            div.addEventListener('click', () => openChat(chat.id, other.username, other.id));
+            div.addEventListener('click', () => openChat(chat.id, other.username, other.login, other.id));
         }
     } catch (e) {
         console.error('Error loading chats:', e);
@@ -559,7 +538,7 @@ function formatChatTimeLocal(isoString) {
 }
 
 // ─── Open chat ────────────────────────────────────────────────────────────────
-async function openChat(chatId, chatName, recipientId) {
+async function openChat(chatId, chatName, chatLogin, recipientId) {
     document.querySelectorAll('.chat-item').forEach(i => i.classList.remove('active'));
     const activeItem = document.querySelector(`.chat-item[data-chat-id="${chatId}"]`);
     if (activeItem) activeItem.classList.add('active');
@@ -569,12 +548,14 @@ async function openChat(chatId, chatName, recipientId) {
         ws = null;
     }
 
-    currentChatId   = chatId;
-    currentChatName = chatName;
+    currentChatId    = chatId;
+    currentChatName  = chatName;
+    currentChatLogin = chatLogin;
 
+    // ── Шапка: сверху username, снизу @login ─────────────────────────────────
     document.getElementById('chatHeaderAvatar').textContent = chatName[0].toUpperCase();
     document.getElementById('chatHeaderName').textContent   = chatName;
-    document.getElementById('chatHeaderStatus').textContent = 'online';
+    document.getElementById('chatHeaderStatus').textContent = chatLogin ? `@${chatLogin}` : '';
 
     document.getElementById('noChatPlaceholder').style.display = 'none';
     const chatInner = document.getElementById('chatInner');
@@ -582,7 +563,7 @@ async function openChat(chatId, chatName, recipientId) {
     chatInner.style.flexDirection = 'column';
     chatInner.style.height        = '100%';
 
-    const container   = document.getElementById('messagesContainer');
+    const container     = document.getElementById('messagesContainer');
     container.innerHTML = '';
     msgOffset     = 0;
     allMsgsLoaded = false;
@@ -591,10 +572,8 @@ async function openChat(chatId, chatName, recipientId) {
 
     connectWebSocket(chatId, currentUserId);
 
-    // On mobile, slide to the chat panel
     showChatPanel();
 
-    // Push a history entry so Android back button works
     if (isMobile()) {
         history.pushState({ chatOpen: true }, '', location.href);
     }
@@ -686,7 +665,7 @@ function connectWebSocket(chatId) {
 
     ws.addEventListener('open', () => {
         console.log('WS connected:', chatId);
-        document.getElementById('chatHeaderStatus').textContent = 'connected';
+        document.getElementById('chatHeaderStatus').textContent = currentChatLogin ? `@${currentChatLogin}` : 'connected';
     });
 
     ws.addEventListener('message', (event) => {
@@ -704,7 +683,7 @@ function connectWebSocket(chatId) {
 
     ws.addEventListener('close', () => {
         console.log('WS disconnected');
-        document.getElementById('chatHeaderStatus').textContent = 'disconnected';
+        document.getElementById('chatHeaderStatus').textContent = currentChatLogin ? `@${currentChatLogin}` : 'disconnected';
     });
 
     ws.addEventListener('error', (e) => {

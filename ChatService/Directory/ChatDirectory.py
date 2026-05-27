@@ -13,6 +13,10 @@ class ChatDirectory:
         chat = Chat(id=chat_id, is_group=is_group)
         self.session.add(chat)
         return chat
+    async def exists(self, chat_id: str):
+        stmt = select(Chat).where(Chat.id == chat_id)
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none() is not None
     async def change_last_message(self, chat_id: str, last_message: str):
         stmt = select(Chat).where(Chat.id == chat_id)
         result = await self.session.execute(stmt)
@@ -75,5 +79,12 @@ class ChatDirectory:
             .having(func.count(ChatRecipients.user_id) == 2)
         )
 
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+    async def get_chat(self, chat_id: str):
+        stmt = (
+            select(Chat)
+            .where(Chat.id == chat_id)
+        )
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()

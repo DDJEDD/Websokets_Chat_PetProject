@@ -16,7 +16,6 @@ class ChatRecipients(Base):
     id = Column(Integer, primary_key=True, index=True)
     chat_id = Column(String, ForeignKey("chat.id"), nullable=False, index=True)
     user_id = Column(Integer, nullable=False, index=True)
-    username = Column(String, nullable=False)
     __table_args__ = (UniqueConstraint("chat_id", "user_id", name="unique_recipients"),)
 
     chat = relationship("Chat", back_populates="recipients")

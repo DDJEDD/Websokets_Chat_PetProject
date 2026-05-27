@@ -4,15 +4,18 @@ from database.database import db
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends
-from petproject_shared.jwt_decode import JWTDecode
+
 
 from Directory.ChatDirectory import ChatDirectory
 from Directory.RecipientsDirectory import RecipientsDirectory
-from config import SECRET_KEY, ALGORITHM
+
 from httpx import AsyncClient
 from .requests import AsyncRequest
-from .WebSockets import WebSockets
+import redis.asyncio as redis
 from Directory.MessageDirectory import MessageDirectory
+from petproject_shared.redis import RedisService
+http_client = AsyncClient()
+redis_service = redis.Redis(host="redis", port=6379, db=0)
 async def get_chat_service(session: AsyncSession=Depends(db.session)):
-    return ChatService(session, JWTDecode(SECRET_KEY, ALGORITHM), AsyncRequest(AsyncClient()),
-                       RecipientsDirectory(session), ChatDirectory(session), MessageDirectory(session), WebSockets())
+    return ChatService(session,  AsyncRequest(http_client),
+                       RecipientsDirectory(session), ChatDirectory(session), MessageDirectory(session), RedisService(redis_service))

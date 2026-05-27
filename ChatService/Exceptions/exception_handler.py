@@ -10,5 +10,7 @@ RecipientAlreadyExists_hnd = exception_handler(400, "Recipient already exists")
 AccessTokenError_hnd = exception_handler(401, "Access token error")
 SameUsers_hnd = exception_handler(400, "Same users")
 ChatAlreadyExists_hnd = exception_handler(400, "Chat already exists")
+UserNotFoundInChat_hnd = exception_handler(400, "User not found in chat")
+ChatNotFound_hnd = exception_handler(404, "Chat not found")
 
 
